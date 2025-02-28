@@ -141,6 +141,96 @@ impl ObjectCount {
     }
 }
 
+struct WindowCount {
+    total: AtomicU32,
+    categories: [(&'static str, AtomicU32); 19],
+}
+
+impl WindowCount {
+    fn new() -> Self {
+        WindowCount {
+            total: AtomicU32::new(0),
+            categories: [
+                ("window:property-change", AtomicU32::new(0)),
+                ("window:minimize", AtomicU32::new(0)),
+                ("window:maximize", AtomicU32::new(0)),
+                ("window:restore", AtomicU32::new(0)),
+                ("window:close", AtomicU32::new(0)),
+                ("window:create", AtomicU32::new(0)),
+                ("window:reparent", AtomicU32::new(0)),
+                ("window:desktop-create", AtomicU32::new(0)),
+                ("window:desktop-destroy", AtomicU32::new(0)),
+                ("window:destroy", AtomicU32::new(0)),
+                ("window:activate", AtomicU32::new(0)),
+                ("window:deactivate", AtomicU32::new(0)),
+                ("window:raise", AtomicU32::new(0)),
+                ("window:lower", AtomicU32::new(0)),
+                ("window:move", AtomicU32::new(0)),
+                ("window:resize", AtomicU32::new(0)),
+                ("window:shade", AtomicU32::new(0)),
+                ("window:uushade", AtomicU32::new(0)),
+                ("window:restyle", AtomicU32::new(0)),
+            ],
+        }
+    }
+
+    /// Increment the count for the given category
+    fn increment(&self, category: &'static str) {
+        self.total
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+        for (cat, count) in &self.categories {
+            if *cat == category {
+                count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                return;
+            }
+        }
+    }
+
+    /// Get the total count
+    fn total(&self) -> u32 {
+        self.total.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// Pretty print the stats
+    /// Order by percentage of total    
+    fn pretty_print_stats(&self) {
+        println!("\n\nTotal window events: {}", self.total());
+        let mut stats: Vec<(&'static str, u32)> = self
+            .categories
+            .iter()
+            .map(|(cat, count)| (*cat, count.load(std::sync::atomic::Ordering::Relaxed)))
+            .collect();
+        stats.sort_by(|a, b| b.1.cmp(&a.1));
+        stats.sort_by(|a, b| b.1.cmp(&a.1));
+
+        for (cat, count) in stats {
+            let percentage = (count as f32 / self.total() as f32) * 100.0;
+            println!("{}: {} ({}%)", cat, count, percentage);
+        }
+    }
+}
+
+// PropertyChange(WindowPropertyChangeEvent),
+// Minimize(MinimizeEvent),
+// Maximize(MaximizeEvent),
+// Restore(RestoreEvent),
+// Close(CloseEvent),
+// Create(CreateEvent),
+// Reparent(ReparentEvent),
+// DesktopCreate(DesktopCreateEvent),
+// DesktopDestroy(DesktopDestroyEvent),
+// Destroy(DestroyEvent),
+// Activate(ActivateEvent),
+// Deactivate(DeactivateEvent),
+// Raise(RaiseEvent),
+// Lower(LowerEvent),
+// Move(MoveEvent),
+// Resize(ResizeEvent),
+// Shade(ShadeEvent),
+// UUshade(UUshadeEvent),
+// Restyle(RestyleEvent),
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let atspi = atspi::AccessibilityConnection::new().await?;
@@ -160,13 +250,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let iface_count = Arc::new(InterfaceCount::new());
     let obj_count = Arc::new(ObjectCount::new());
+    let win_count = Arc::new(WindowCount::new());
+
     let ctrlc_iface_count = iface_count.clone();
     let ctrl_c_obj_count = obj_count.clone();
+    let ctrl_c_win_count = win_count.clone();
 
     ctrlc::set_handler(move || {
         println!("\n\nStats:");
         ctrlc_iface_count.pretty_print_stats();
         ctrl_c_obj_count.pretty_print_stats();
+        ctrl_c_win_count.pretty_print_stats();
         std::process::exit(0);
     })
     .expect("Error setting Ctrl-C handler");
@@ -227,7 +321,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
-            Event::Window(_) => iface_count.increment("window"),
+            Event::Window(wev) => {
+                iface_count.increment("window");
+                match wev {
+                    WindowEvents::PropertyChange(_) => {
+                        win_count.increment("window:property-change")
+                    }
+                    WindowEvents::Minimize(_) => win_count.increment("window:minimize"),
+                    WindowEvents::Maximize(_) => win_count.increment("window:maximize"),
+                    WindowEvents::Restore(_) => win_count.increment("window:restore"),
+                    WindowEvents::Close(_) => win_count.increment("window:close"),
+                    WindowEvents::Create(_) => win_count.increment("window:create"),
+                    WindowEvents::Reparent(_) => win_count.increment("window:reparent"),
+                    WindowEvents::DesktopCreate(_) => win_count.increment("window:desktop-create"),
+                    WindowEvents::DesktopDestroy(_) => {
+                        win_count.increment("window:desktop-destroy")
+                    }
+                    WindowEvents::Destroy(_) => win_count.increment("window:destroy"),
+                    WindowEvents::Activate(_) => win_count.increment("window:activate"),
+                    WindowEvents::Deactivate(_) => win_count.increment("window:deactivate"),
+                    WindowEvents::Raise(_) => win_count.increment("window:raise"),
+                    WindowEvents::Lower(_) => win_count.increment("window:lower"),
+                    WindowEvents::Move(_) => win_count.increment("window:move"),
+                    WindowEvents::Resize(_) => win_count.increment("window:resize"),
+                    WindowEvents::Shade(_) => win_count.increment("window:shade"),
+                    WindowEvents::UUshade(_) => win_count.increment("window:uushade"),
+                    WindowEvents::Restyle(_) => win_count.increment("window:restyle"),
+                };
+            }
             Event::Document(_) => iface_count.increment("document"),
             Event::Terminal(_) => iface_count.increment("terminal"),
             Event::Mouse(_) => iface_count.increment("mouse"),
