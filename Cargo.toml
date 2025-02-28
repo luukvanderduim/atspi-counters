@@ -1,0 +1,10 @@
+[package]
+  edition = "2024"
+  name    = "atspi-counters"
+  version = "0.1.0"
+
+[dependencies]
+  atspi        = "0.25.0"
+  ctrlc        = "3"
+  tokio        = { version = "1", features = [ "full" ] }
+  tokio-stream = { version = "0.1", features = [ "full" ] }
