@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let iface_count = Arc::new(InterfaceCount::new());
     let obj_count = Arc::new(ObjectCount::new());
     let win_count = Arc::new(WindowCount::new());
-    let terminal_count = Arc::new(InterfaceCount::new());
+    let term_count = Arc::new(InterfaceCount::new());
     let doc_count = Arc::new(InterfaceCount::new());
     let mouse_count = Arc::new(InterfaceCount::new());
     let cache_count = Arc::new(InterfaceCount::new());
@@ -37,22 +37,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ctrlc_iface_count = iface_count.clone();
     let ctrlc_obj_count = obj_count.clone();
     let ctrlc_win_count = win_count.clone();
-    let ctrlc_terminal_count = terminal_count.clone();
+    let ctrlc_term_count = term_count.clone();
     let ctrlc_doc_count = doc_count.clone();
     let ctrlc_mouse_count = mouse_count.clone();
     let ctrlc_cache_count = cache_count.clone();
 
     ctrlc::set_handler(move || {
-        let collections: &[Arc<dyn CounterStats>] = &[
-            ctrlc_iface_count.clone(),
-            ctrlc_obj_count.clone(),
-            ctrlc_win_count.clone(),
-            ctrlc_terminal_count.clone(),
-            ctrlc_doc_count.clone(),
-            ctrlc_mouse_count.clone(),
-            ctrlc_cache_count.clone(),
-        ];
-        write_stats(collections);
+        // let collections: &[Arc<dyn CounterStats>] = &[
+        //     ctrlc_iface_count.clone(),
+        //     ctrlc_obj_count.clone(),
+        //     ctrlc_win_count.clone(),
+        //     ctrlc_term_count.clone(),
+        //     ctrlc_doc_count.clone(),
+        //     ctrlc_mouse_count.clone(),
+        //     ctrlc_cache_count.clone(),
+        // ];
+        // write_stats(collections);
 
         println!("\n\nStats:");
         println!("Interface stats:");
@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ctrlc_win_count.pretty_print_stats();
 
         println!("\nTerminal stats:");
-        ctrlc_terminal_count.pretty_print_stats();
+        ctrlc_term_count.pretty_print_stats();
 
         println!("\nDocument stats:");
         ctrlc_doc_count.pretty_print_stats();
@@ -139,29 +139,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Event::Window(wev) => {
                 iface_count.increment("window");
                 match wev {
-                    WindowEvents::PropertyChange(_) => {
-                        win_count.increment("window:property-change")
-                    }
-                    WindowEvents::Minimize(_) => win_count.increment("window:minimize"),
-                    WindowEvents::Maximize(_) => win_count.increment("window:maximize"),
-                    WindowEvents::Restore(_) => win_count.increment("window:restore"),
-                    WindowEvents::Close(_) => win_count.increment("window:close"),
-                    WindowEvents::Create(_) => win_count.increment("window:create"),
-                    WindowEvents::Reparent(_) => win_count.increment("window:reparent"),
-                    WindowEvents::DesktopCreate(_) => win_count.increment("window:desktop-create"),
-                    WindowEvents::DesktopDestroy(_) => {
-                        win_count.increment("window:desktop-destroy")
-                    }
-                    WindowEvents::Destroy(_) => win_count.increment("window:destroy"),
-                    WindowEvents::Activate(_) => win_count.increment("window:activate"),
-                    WindowEvents::Deactivate(_) => win_count.increment("window:deactivate"),
-                    WindowEvents::Raise(_) => win_count.increment("window:raise"),
-                    WindowEvents::Lower(_) => win_count.increment("window:lower"),
-                    WindowEvents::Move(_) => win_count.increment("window:move"),
-                    WindowEvents::Resize(_) => win_count.increment("window:resize"),
-                    WindowEvents::Shade(_) => win_count.increment("window:shade"),
-                    WindowEvents::UUshade(_) => win_count.increment("window:uushade"),
-                    WindowEvents::Restyle(_) => win_count.increment("window:restyle"),
+                    WindowEvents::PropertyChange(_) => win_count.increment("property-change"),
+                    WindowEvents::Minimize(_) => win_count.increment("minimize"),
+                    WindowEvents::Maximize(_) => win_count.increment("maximize"),
+                    WindowEvents::Restore(_) => win_count.increment("restore"),
+                    WindowEvents::Close(_) => win_count.increment("close"),
+                    WindowEvents::Create(_) => win_count.increment("create"),
+                    WindowEvents::Reparent(_) => win_count.increment("reparent"),
+                    WindowEvents::DesktopCreate(_) => win_count.increment("desktop-create"),
+                    WindowEvents::DesktopDestroy(_) => win_count.increment("desktop-destroy"),
+                    WindowEvents::Destroy(_) => win_count.increment("destroy"),
+                    WindowEvents::Activate(_) => win_count.increment("activate"),
+                    WindowEvents::Deactivate(_) => win_count.increment("deactivate"),
+                    WindowEvents::Raise(_) => win_count.increment("raise"),
+                    WindowEvents::Lower(_) => win_count.increment("lower"),
+                    WindowEvents::Move(_) => win_count.increment("move"),
+                    WindowEvents::Resize(_) => win_count.increment("resize"),
+                    WindowEvents::Shade(_) => win_count.increment("shade"),
+                    WindowEvents::UUshade(_) => win_count.increment("uushade"),
+                    WindowEvents::Restyle(_) => win_count.increment("restyle"),
                 };
             }
             Event::Document(doc_ev) => {
@@ -175,25 +171,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         doc_count.increment("attributes-changed")
                     }
                     DocumentEvents::PageChanged(_) => doc_count.increment("page-changed"),
-                }
+                };
             }
             Event::Terminal(term_ev) => {
                 iface_count.increment("terminal");
                 match term_ev {
-                    TerminalEvents::LineChanged(_) => terminal_count.increment("line-changed"),
+                    TerminalEvents::LineChanged(_) => term_count.increment("line-changed"),
                     TerminalEvents::ColumnCountChanged(_) => {
-                        terminal_count.increment("column-count-changed")
+                        term_count.increment("column-count-changed")
                     }
                     TerminalEvents::LineCountChanged(_) => {
-                        terminal_count.increment("line-count-changed")
+                        term_count.increment("line-count-changed")
                     }
                     TerminalEvents::ApplicationChanged(_) => {
-                        terminal_count.increment("application-changed")
+                        term_count.increment("application-changed")
                     }
                     TerminalEvents::CharWidthChanged(_) => {
-                        terminal_count.increment("char-width-changed")
+                        term_count.increment("char-width-changed")
                     }
-                }
+                };
             }
 
             Event::Mouse(mouse_ev) => {
@@ -202,15 +198,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     MouseEvents::Abs(_) => mouse_count.increment("abs"),
                     MouseEvents::Rel(_) => mouse_count.increment("rel"),
                     MouseEvents::Button(_) => mouse_count.increment("button"),
-                }
+                };
             }
+
             Event::Cache(cache_ev) => {
                 iface_count.increment("cache");
                 match cache_ev {
                     CacheEvents::Add(_) => cache_count.increment("add"),
                     CacheEvents::LegacyAdd(_) => cache_count.increment("legacy-add"),
                     CacheEvents::Remove(_) => cache_count.increment("remove"),
-                }
+                };
             }
 
             Event::Keyboard(_) => iface_count.increment("keyboard"),

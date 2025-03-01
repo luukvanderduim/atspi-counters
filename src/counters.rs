@@ -39,7 +39,11 @@ where
         stats.sort_by(|a, b| b.1.cmp(&a.1));
 
         for (cat, count) in stats {
-            let percentage = (count as f32 / self.total() as f32) * 100.0;
+            let percentage = if self.total() > 0 {
+                (count as f32 / self.total() as f32) * 100.0
+            } else {
+                0.0
+            };
             println!("{}: {} ({}%)", cat, count, percentage);
         }
     }
