@@ -5,7 +5,10 @@ use atspi::events::{
 use std::{error::Error, sync::Arc};
 use tokio_stream::StreamExt;
 mod counters;
-use counters::{CounterStats, InterfaceCount, ObjectCount, WindowCount};
+use counters::{
+    CacheCount, CounterStats, DocumentCount, InterfaceCount, MouseCount, ObjectCount,
+    TerminalCount, WindowCount,
+};
 mod writer;
 use writer::write_stats;
 
@@ -29,10 +32,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let iface_count = Arc::new(InterfaceCount::new());
     let obj_count = Arc::new(ObjectCount::new());
     let win_count = Arc::new(WindowCount::new());
-    let term_count = Arc::new(InterfaceCount::new());
-    let doc_count = Arc::new(InterfaceCount::new());
-    let mouse_count = Arc::new(InterfaceCount::new());
-    let cache_count = Arc::new(InterfaceCount::new());
+    let term_count = Arc::new(TerminalCount::new());
+    let doc_count = Arc::new(DocumentCount::new());
+    let mouse_count = Arc::new(MouseCount::new());
+    let cache_count = Arc::new(CacheCount::new());
 
     let ctrlc_iface_count = iface_count.clone();
     let ctrlc_obj_count = obj_count.clone();
@@ -43,16 +46,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ctrlc_cache_count = cache_count.clone();
 
     ctrlc::set_handler(move || {
-        // let collections: &[Arc<dyn CounterStats>] = &[
-        //     ctrlc_iface_count.clone(),
-        //     ctrlc_obj_count.clone(),
-        //     ctrlc_win_count.clone(),
-        //     ctrlc_term_count.clone(),
-        //     ctrlc_doc_count.clone(),
-        //     ctrlc_mouse_count.clone(),
-        //     ctrlc_cache_count.clone(),
-        // ];
-        // write_stats(collections);
+        let collections: &[Arc<dyn CounterStats>] = &[
+            ctrlc_iface_count.clone(),
+            ctrlc_obj_count.clone(),
+            ctrlc_win_count.clone(),
+            ctrlc_term_count.clone(),
+            ctrlc_doc_count.clone(),
+            ctrlc_mouse_count.clone(),
+            ctrlc_cache_count.clone(),
+        ];
+        write_stats(collections);
 
         println!("\n\nStats:");
         println!("Interface stats:");
