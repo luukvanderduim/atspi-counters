@@ -1,7 +1,9 @@
 [package]
-  edition = "2024"
-  name    = "atspi-counters"
-  version = "0.1.0"
+  authors     = [ "Luuk van der Duim" ]
+  description = "A simple CLI tool to count the number of AT-SPI events."
+  edition     = "2024"
+  name        = "atspi-counters"
+  version     = "0.2.0"
 
 [dependencies]
   atspi        = "0.25.0"

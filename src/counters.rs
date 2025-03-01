@@ -44,7 +44,10 @@ where
             } else {
                 0.0
             };
-            println!("{}: {} ({}%)", cat, count, percentage);
+            // Position these in fixed width columns
+            print!("{:<30}", cat);
+            print!("{:<10}", count);
+            println!("{:.2}%", percentage);
         }
     }
 }
