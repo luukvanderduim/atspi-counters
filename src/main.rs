@@ -8,6 +8,7 @@ use counters::{
     TerminalCount, WindowCount,
 };
 
+mod aggregate;
 mod writer;
 use writer::write_stats;
 mod matchers;

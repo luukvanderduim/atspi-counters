@@ -8,34 +8,30 @@ use std::sync::Arc;
 
 pub fn match_object_events(oev: ObjectEvents, obj_count: &Arc<ObjectCount>) {
     match oev {
-        ObjectEvents::PropertyChange(_) => obj_count.increment("object:property-change"),
-        ObjectEvents::BoundsChanged(_) => obj_count.increment("object:bounds-changed"),
-        ObjectEvents::LinkSelected(_) => obj_count.increment("object:link-selected"),
-        ObjectEvents::StateChanged(_) => obj_count.increment("object:state-changed"),
-        ObjectEvents::ChildrenChanged(_) => obj_count.increment("object:children-changed"),
-        ObjectEvents::VisibleDataChanged(_) => obj_count.increment("object:visible-data-changed"),
-        ObjectEvents::SelectionChanged(_) => obj_count.increment("object:selection-changed"),
-        ObjectEvents::ModelChanged(_) => obj_count.increment("object:model-changed"),
+        ObjectEvents::PropertyChange(_) => obj_count.increment("property-change"),
+        ObjectEvents::BoundsChanged(_) => obj_count.increment("bounds-changed"),
+        ObjectEvents::LinkSelected(_) => obj_count.increment("link-selected"),
+        ObjectEvents::StateChanged(_) => obj_count.increment("state-changed"),
+        ObjectEvents::ChildrenChanged(_) => obj_count.increment("children-changed"),
+        ObjectEvents::VisibleDataChanged(_) => obj_count.increment("visible-data-changed"),
+        ObjectEvents::SelectionChanged(_) => obj_count.increment("selection-changed"),
+        ObjectEvents::ModelChanged(_) => obj_count.increment("model-changed"),
         ObjectEvents::ActiveDescendantChanged(_) => {
-            obj_count.increment("object:active-descendant-changed")
+            obj_count.increment("active-descendant-changed")
         }
-        ObjectEvents::Announcement(_) => obj_count.increment("object:announcement"),
-        ObjectEvents::AttributesChanged(_) => obj_count.increment("object:attributes-changed"),
-        ObjectEvents::RowInserted(_) => obj_count.increment("object:row-inserted"),
-        ObjectEvents::RowReordered(_) => obj_count.increment("object:row-reordered"),
-        ObjectEvents::RowDeleted(_) => obj_count.increment("object:row-deleted"),
-        ObjectEvents::ColumnInserted(_) => obj_count.increment("object:column-inserted"),
-        ObjectEvents::ColumnReordered(_) => obj_count.increment("object:column-reordered"),
-        ObjectEvents::ColumnDeleted(_) => obj_count.increment("object:column-deleted"),
-        ObjectEvents::TextBoundsChanged(_) => obj_count.increment("object:text-bounds-changed"),
-        ObjectEvents::TextSelectionChanged(_) => {
-            obj_count.increment("object:text-selection-changed")
-        }
-        ObjectEvents::TextChanged(_) => obj_count.increment("object:text-changed"),
-        ObjectEvents::TextAttributesChanged(_) => {
-            obj_count.increment("object:text-attributes-changed")
-        }
-        ObjectEvents::TextCaretMoved(_) => obj_count.increment("object:text-caret-moved"),
+        ObjectEvents::Announcement(_) => obj_count.increment("announcement"),
+        ObjectEvents::AttributesChanged(_) => obj_count.increment("attributes-changed"),
+        ObjectEvents::RowInserted(_) => obj_count.increment("row-inserted"),
+        ObjectEvents::RowReordered(_) => obj_count.increment("row-reordered"),
+        ObjectEvents::RowDeleted(_) => obj_count.increment("row-deleted"),
+        ObjectEvents::ColumnInserted(_) => obj_count.increment("column-inserted"),
+        ObjectEvents::ColumnReordered(_) => obj_count.increment("column-reordered"),
+        ObjectEvents::ColumnDeleted(_) => obj_count.increment("column-deleted"),
+        ObjectEvents::TextBoundsChanged(_) => obj_count.increment("text-bounds-changed"),
+        ObjectEvents::TextSelectionChanged(_) => obj_count.increment("text-selection-changed"),
+        ObjectEvents::TextChanged(_) => obj_count.increment("text-changed"),
+        ObjectEvents::TextAttributesChanged(_) => obj_count.increment("text-attributes-changed"),
+        ObjectEvents::TextCaretMoved(_) => obj_count.increment("text-caret-moved"),
     };
 }
 
