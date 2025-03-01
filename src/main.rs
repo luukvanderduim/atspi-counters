@@ -2,234 +2,12 @@ use atspi::events::{
     AvailableEvent, CacheEvents, DocumentEvents, Event, EventListenerEvents, FocusEvents,
     KeyboardEvents, MouseEvents, ObjectEvents, TerminalEvents, WindowEvents,
 };
-use std::{
-    error::Error,
-    sync::{Arc, atomic::AtomicU32},
-};
+use std::{error::Error, sync::Arc};
 use tokio_stream::StreamExt;
-
-struct InterfaceCount {
-    total: AtomicU32,
-
-    categories: [(&'static str, AtomicU32); 10],
-}
-
-impl InterfaceCount {
-    fn new() -> Self {
-        InterfaceCount {
-            total: AtomicU32::new(0),
-            categories: [
-                ("object", AtomicU32::new(0)),
-                ("window", AtomicU32::new(0)),
-                ("document", AtomicU32::new(0)),
-                ("terminal", AtomicU32::new(0)),
-                ("mouse", AtomicU32::new(0)),
-                ("keyboard", AtomicU32::new(0)),
-                ("listener", AtomicU32::new(0)),
-                ("cache", AtomicU32::new(0)),
-                ("focus", AtomicU32::new(0)),
-                ("available", AtomicU32::new(0)),
-            ],
-        }
-    }
-
-    /// Increment the count for the given category
-    fn increment(&self, category: &'static str) {
-        self.total
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-
-        for (cat, count) in &self.categories {
-            if *cat == category {
-                count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                return;
-            }
-        }
-    }
-
-    /// Get the total count
-    fn total(&self) -> u32 {
-        self.total.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
-    /// Pretty print the stats
-    /// Order by percentage of total    
-    fn pretty_print_stats(&self) {
-        println!("Total events: {}", self.total());
-        let mut stats: Vec<(&'static str, u32)> = self
-            .categories
-            .iter()
-            .map(|(cat, count)| (*cat, count.load(std::sync::atomic::Ordering::Relaxed)))
-            .collect();
-        stats.sort_by(|a, b| b.1.cmp(&a.1));
-
-        for (cat, count) in stats {
-            let percentage = (count as f32 / self.total() as f32) * 100.0;
-            println!("{}: {} ({}%)", cat, count, percentage);
-        }
-    }
-}
-
-struct ObjectCount {
-    total: AtomicU32,
-    categories: [(&'static str, AtomicU32); 22],
-}
-
-impl ObjectCount {
-    fn new() -> Self {
-        ObjectCount {
-            total: AtomicU32::new(0),
-            categories: [
-                ("object:property-change", AtomicU32::new(0)),
-                ("object:bounds-changed", AtomicU32::new(0)),
-                ("object:link-selected", AtomicU32::new(0)),
-                ("object:state-changed", AtomicU32::new(0)),
-                ("object:children-changed", AtomicU32::new(0)),
-                ("object:visible-data-changed", AtomicU32::new(0)),
-                ("object:selection-changed", AtomicU32::new(0)),
-                ("object:model-changed", AtomicU32::new(0)),
-                ("object:active-descendant-changed", AtomicU32::new(0)),
-                ("object:announcement", AtomicU32::new(0)),
-                ("object:attributes-changed", AtomicU32::new(0)),
-                ("object:row-inserted", AtomicU32::new(0)),
-                ("object:row-reordered", AtomicU32::new(0)),
-                ("object:row-deleted", AtomicU32::new(0)),
-                ("object:column-inserted", AtomicU32::new(0)),
-                ("object:column-reordered", AtomicU32::new(0)),
-                ("object:column-deleted", AtomicU32::new(0)),
-                ("object:text-bounds-changed", AtomicU32::new(0)),
-                ("object:text-selection-changed", AtomicU32::new(0)),
-                ("object:text-changed", AtomicU32::new(0)),
-                ("object:text-attributes-changed", AtomicU32::new(0)),
-                ("object:text-caret-moved", AtomicU32::new(0)),
-            ],
-        }
-    }
-
-    /// Increment the count for the given category
-    fn increment(&self, category: &'static str) {
-        self.total
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-
-        for (cat, count) in &self.categories {
-            if *cat == category {
-                count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                return;
-            }
-        }
-    }
-
-    /// Get the total count
-    fn total(&self) -> u32 {
-        self.total.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
-    /// Pretty print the stats
-    /// Order by percentage of total    
-    fn pretty_print_stats(&self) {
-        println!("\n\nTotal object events: {}", self.total());
-        let mut stats: Vec<(&'static str, u32)> = self
-            .categories
-            .iter()
-            .map(|(cat, count)| (*cat, count.load(std::sync::atomic::Ordering::Relaxed)))
-            .collect();
-        stats.sort_by(|a, b| b.1.cmp(&a.1));
-
-        for (cat, count) in stats {
-            let percentage = (count as f32 / self.total() as f32) * 100.0;
-            println!("{}: {} ({}%)", cat, count, percentage);
-        }
-    }
-}
-
-struct WindowCount {
-    total: AtomicU32,
-    categories: [(&'static str, AtomicU32); 19],
-}
-
-impl WindowCount {
-    fn new() -> Self {
-        WindowCount {
-            total: AtomicU32::new(0),
-            categories: [
-                ("window:property-change", AtomicU32::new(0)),
-                ("window:minimize", AtomicU32::new(0)),
-                ("window:maximize", AtomicU32::new(0)),
-                ("window:restore", AtomicU32::new(0)),
-                ("window:close", AtomicU32::new(0)),
-                ("window:create", AtomicU32::new(0)),
-                ("window:reparent", AtomicU32::new(0)),
-                ("window:desktop-create", AtomicU32::new(0)),
-                ("window:desktop-destroy", AtomicU32::new(0)),
-                ("window:destroy", AtomicU32::new(0)),
-                ("window:activate", AtomicU32::new(0)),
-                ("window:deactivate", AtomicU32::new(0)),
-                ("window:raise", AtomicU32::new(0)),
-                ("window:lower", AtomicU32::new(0)),
-                ("window:move", AtomicU32::new(0)),
-                ("window:resize", AtomicU32::new(0)),
-                ("window:shade", AtomicU32::new(0)),
-                ("window:uushade", AtomicU32::new(0)),
-                ("window:restyle", AtomicU32::new(0)),
-            ],
-        }
-    }
-
-    /// Increment the count for the given category
-    fn increment(&self, category: &'static str) {
-        self.total
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-
-        for (cat, count) in &self.categories {
-            if *cat == category {
-                count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                return;
-            }
-        }
-    }
-
-    /// Get the total count
-    fn total(&self) -> u32 {
-        self.total.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
-    /// Pretty print the stats
-    /// Order by percentage of total    
-    fn pretty_print_stats(&self) {
-        println!("\n\nTotal window events: {}", self.total());
-        let mut stats: Vec<(&'static str, u32)> = self
-            .categories
-            .iter()
-            .map(|(cat, count)| (*cat, count.load(std::sync::atomic::Ordering::Relaxed)))
-            .collect();
-        stats.sort_by(|a, b| b.1.cmp(&a.1));
-        stats.sort_by(|a, b| b.1.cmp(&a.1));
-
-        for (cat, count) in stats {
-            let percentage = (count as f32 / self.total() as f32) * 100.0;
-            println!("{}: {} ({}%)", cat, count, percentage);
-        }
-    }
-}
-
-// PropertyChange(WindowPropertyChangeEvent),
-// Minimize(MinimizeEvent),
-// Maximize(MaximizeEvent),
-// Restore(RestoreEvent),
-// Close(CloseEvent),
-// Create(CreateEvent),
-// Reparent(ReparentEvent),
-// DesktopCreate(DesktopCreateEvent),
-// DesktopDestroy(DesktopDestroyEvent),
-// Destroy(DestroyEvent),
-// Activate(ActivateEvent),
-// Deactivate(DeactivateEvent),
-// Raise(RaiseEvent),
-// Lower(LowerEvent),
-// Move(MoveEvent),
-// Resize(ResizeEvent),
-// Shade(ShadeEvent),
-// UUshade(UUshadeEvent),
-// Restyle(RestyleEvent),
+mod counters;
+use counters::{CounterStats, InterfaceCount, ObjectCount, WindowCount};
+mod writer;
+use writer::write_stats;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -251,16 +29,53 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let iface_count = Arc::new(InterfaceCount::new());
     let obj_count = Arc::new(ObjectCount::new());
     let win_count = Arc::new(WindowCount::new());
+    let terminal_count = Arc::new(InterfaceCount::new());
+    let doc_count = Arc::new(InterfaceCount::new());
+    let mouse_count = Arc::new(InterfaceCount::new());
+    let cache_count = Arc::new(InterfaceCount::new());
 
     let ctrlc_iface_count = iface_count.clone();
-    let ctrl_c_obj_count = obj_count.clone();
-    let ctrl_c_win_count = win_count.clone();
+    let ctrlc_obj_count = obj_count.clone();
+    let ctrlc_win_count = win_count.clone();
+    let ctrlc_terminal_count = terminal_count.clone();
+    let ctrlc_doc_count = doc_count.clone();
+    let ctrlc_mouse_count = mouse_count.clone();
+    let ctrlc_cache_count = cache_count.clone();
 
     ctrlc::set_handler(move || {
+        let collections: &[Arc<dyn CounterStats>] = &[
+            ctrlc_iface_count.clone(),
+            ctrlc_obj_count.clone(),
+            ctrlc_win_count.clone(),
+            ctrlc_terminal_count.clone(),
+            ctrlc_doc_count.clone(),
+            ctrlc_mouse_count.clone(),
+            ctrlc_cache_count.clone(),
+        ];
+        write_stats(collections);
+
         println!("\n\nStats:");
+        println!("Interface stats:");
         ctrlc_iface_count.pretty_print_stats();
-        ctrl_c_obj_count.pretty_print_stats();
-        ctrl_c_win_count.pretty_print_stats();
+
+        println!("\nObject stats:");
+        ctrlc_obj_count.pretty_print_stats();
+
+        println!("\nWindow stats:");
+        ctrlc_win_count.pretty_print_stats();
+
+        println!("\nTerminal stats:");
+        ctrlc_terminal_count.pretty_print_stats();
+
+        println!("\nDocument stats:");
+        ctrlc_doc_count.pretty_print_stats();
+
+        println!("\nMouse stats:");
+        ctrlc_mouse_count.pretty_print_stats();
+
+        println!("\nCache stats:");
+        ctrlc_cache_count.pretty_print_stats();
+
         std::process::exit(0);
     })
     .expect("Error setting Ctrl-C handler");
@@ -349,12 +164,57 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     WindowEvents::Restyle(_) => win_count.increment("window:restyle"),
                 };
             }
-            Event::Document(_) => iface_count.increment("document"),
-            Event::Terminal(_) => iface_count.increment("terminal"),
-            Event::Mouse(_) => iface_count.increment("mouse"),
+            Event::Document(doc_ev) => {
+                iface_count.increment("document");
+                match doc_ev {
+                    DocumentEvents::LoadComplete(_) => doc_count.increment("load-complete"),
+                    DocumentEvents::Reload(_) => doc_count.increment("reload"),
+                    DocumentEvents::LoadStopped(_) => doc_count.increment("load-stopped"),
+                    DocumentEvents::ContentChanged(_) => doc_count.increment("content-changed"),
+                    DocumentEvents::AttributesChanged(_) => {
+                        doc_count.increment("attributes-changed")
+                    }
+                    DocumentEvents::PageChanged(_) => doc_count.increment("page-changed"),
+                }
+            }
+            Event::Terminal(term_ev) => {
+                iface_count.increment("terminal");
+                match term_ev {
+                    TerminalEvents::LineChanged(_) => terminal_count.increment("line-changed"),
+                    TerminalEvents::ColumnCountChanged(_) => {
+                        terminal_count.increment("column-count-changed")
+                    }
+                    TerminalEvents::LineCountChanged(_) => {
+                        terminal_count.increment("line-count-changed")
+                    }
+                    TerminalEvents::ApplicationChanged(_) => {
+                        terminal_count.increment("application-changed")
+                    }
+                    TerminalEvents::CharWidthChanged(_) => {
+                        terminal_count.increment("char-width-changed")
+                    }
+                }
+            }
+
+            Event::Mouse(mouse_ev) => {
+                iface_count.increment("mouse");
+                match mouse_ev {
+                    MouseEvents::Abs(_) => mouse_count.increment("abs"),
+                    MouseEvents::Rel(_) => mouse_count.increment("rel"),
+                    MouseEvents::Button(_) => mouse_count.increment("button"),
+                }
+            }
+            Event::Cache(cache_ev) => {
+                iface_count.increment("cache");
+                match cache_ev {
+                    CacheEvents::Add(_) => cache_count.increment("add"),
+                    CacheEvents::LegacyAdd(_) => cache_count.increment("legacy-add"),
+                    CacheEvents::Remove(_) => cache_count.increment("remove"),
+                }
+            }
+
             Event::Keyboard(_) => iface_count.increment("keyboard"),
             Event::Listener(_) => iface_count.increment("listener"),
-            Event::Cache(_) => iface_count.increment("cache"),
             Event::Focus(_) => iface_count.increment("focus"),
             Event::Available(_) => iface_count.increment("available"),
             _ => {}
